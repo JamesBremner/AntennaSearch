@@ -1,3 +1,4 @@
+#include <windows.h>
 #include <iostream>
 #include <map>
 #include <nana/gui.hpp>
@@ -21,7 +22,7 @@ public:
     cSearchFolders()
     {
         // specify folders that need to be searched for each category
-        Add("./drawings",eCat::drawings);
+        Add(".",eCat::drawings);
         Add("./drawings/extras", eCat::drawings );
     }
 
@@ -65,6 +66,33 @@ public:
         return vfolder;
     }
 
+    /** Search specified folders
+        @param[in] target
+        @return vector of discoveries
+    */
+    std::vector< std::string > Search( const std::string& target )
+    {
+        std::vector< std::string > vret;
+        std::vector< std::string > vfolder = Folders();
+        for( auto f : vfolder )
+        {
+            std::string pathtarget = f + "/" + target;
+            WIN32_FIND_DATA data;
+            HANDLE h = FindFirstFile( pathtarget.c_str() ,&data);
+            if( h!=INVALID_HANDLE_VALUE )
+            {
+                do
+                {
+                    vret.push_back( f + "/" + data.cFileName );
+                }
+                while(FindNextFile(h,&data));
+            }
+
+            FindClose(h);
+        }
+        return vret;
+    }
+
 private:
 
     std::multimap< int, std::string > myFolders;
@@ -97,6 +125,15 @@ int main()
         {
             msg << "Searching " << f << "\n";
         }
+
+        msg << "\nFound:\n";
+
+        std::vector< std::string > vfound = SearchFolders.Search( target.value() );
+        for( auto f :vfound )
+        {
+            msg << f << "\n";
+        }
+
         msg.show();
 
 
